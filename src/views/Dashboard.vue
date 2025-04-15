@@ -254,10 +254,14 @@ const fetchOlamData = async () => {
     
     // 添加过滤条件 - 批次ID优先级最高
     if (filterForm.batchIds && filterForm.batchIds.length > 0) {
+      // 如果指定了批次ID，则仅使用批次ID作为筛选条件
       params.batchIds = filterForm.batchIds.join(',')
+      
+      // 此处可能需要一个特殊标记，告诉后端API这是按批次ID直接查询
+      params.searchByBatchId = true
     } 
-    // 只有在没有指定批次ID时，才应用其他筛选条件
     else {
+      // 只有在没有指定批次ID时，才应用其他筛选条件
       if (filterForm.deviceIds && filterForm.deviceIds.length > 0) {
         params.deviceIds = filterForm.deviceIds.join(',')
       }
@@ -384,12 +388,16 @@ const exportToExcel = async () => {
     
     // 批次ID优先级最高
     if (filterForm.batchIds && filterForm.batchIds.length > 0) {
+      // 如果指定了批次ID，则仅使用批次ID作为筛选条件
       filterForm.batchIds.forEach(id => {
         searchParams.append('batchIds', id)
       })
+      
+      // 此处可能需要一个特殊标记，告诉后端API这是按批次ID直接查询
+      searchParams.append('searchByBatchId', 'true')
     } 
-    // 只有在没有指定批次ID时，才应用其他筛选条件
     else {
+      // 只有在没有指定批次ID时，才应用其他筛选条件
       if (filterForm.deviceIds && filterForm.deviceIds.length > 0) {
         filterForm.deviceIds.forEach(id => {
           searchParams.append('deviceIds', id)
