@@ -21,6 +21,25 @@
             />
           </el-select>
         </el-form-item>
+        <el-form-item label="Lot号">
+          <el-select
+            v-model="filterForm.lotNumbers"
+            placeholder="输入或选择Lot号"
+            multiple
+            filterable
+            allow-create
+            default-first-option
+            clearable
+            style="width: 250px;"
+          >
+            <el-option
+              v-for="lotNumber in recentLotNumbers"
+              :key="lotNumber"
+              :label="lotNumber"
+              :value="lotNumber"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="设备号">
           <el-select 
             v-model="filterForm.deviceIds" 
@@ -145,6 +164,8 @@ const stdevRoundsChart = ref<HTMLElement | null>(null)
 
 // 新增收集最近使用的批次ID
 const recentBatchIds = ref<string[]>([])
+// 新增收集最近使用的Lot号
+const recentLotNumbers = ref<string[]>([])
 
 // 获取当天日期作为默认值
 const getTodayDateRange = () => {
@@ -159,6 +180,7 @@ const getTodayDateRange = () => {
 // 筛选表单，修改batchId为批次ID数组
 const filterForm = reactive({
   batchIds: [] as string[],
+  lotNumbers: [] as string[],
   deviceIds: [] as string[],
   operatorIds: [] as string[],
   dateRange: getTodayDateRange(),
@@ -171,6 +193,7 @@ const filterForm = reactive({
 const initializeFilterFromStore = () => {
   if (dataStore.currentFilter) {
     filterForm.batchIds = dataStore.currentFilter.batchIds || []
+    filterForm.lotNumbers = dataStore.currentFilter.lotNumbers || []
     filterForm.deviceIds = [...dataStore.currentFilter.deviceIds]
     filterForm.operatorIds = [...dataStore.currentFilter.operatorIds]
     filterForm.dateRange = [...dataStore.currentFilter.dateRange]
@@ -182,6 +205,11 @@ const initializeFilterFromStore = () => {
     if (dataStore.currentFilter.batchIds && dataStore.currentFilter.batchIds.length > 0) {
       updateRecentBatchIds(dataStore.currentFilter.batchIds)
     }
+    
+    // 如果有Lot号，添加到最近使用的列表中
+    if (dataStore.currentFilter.lotNumbers && dataStore.currentFilter.lotNumbers.length > 0) {
+      updateRecentLotNumbers(dataStore.currentFilter.lotNumbers)
+    }
   }
 }
 
@@ -190,6 +218,13 @@ const updateRecentBatchIds = (newBatchIds: string[]) => {
   // 合并新的批次ID和已有的，去重，并限制数量为10个
   const allBatchIds = [...new Set([...newBatchIds, ...recentBatchIds.value])]
   recentBatchIds.value = allBatchIds.slice(0, 10)
+}
+
+// 更新最近使用的Lot号列表
+const updateRecentLotNumbers = (newLotNumbers: string[]) => {
+  // 合并新的Lot号和已有的，去重，并限制数量为10个
+  const allLotNumbers = [...new Set([...newLotNumbers, ...recentLotNumbers.value])]
+  recentLotNumbers.value = allLotNumbers.slice(0, 10)
 }
 
 // 计算是否有批次数据
@@ -221,6 +256,7 @@ const getColor = (index: number) => {
 // 重置筛选条件，更新以清空批次ID数组
 const resetFilter = () => {
   filterForm.batchIds = []
+  filterForm.lotNumbers = []
   filterForm.deviceIds = []
   filterForm.operatorIds = []
   filterForm.dateRange = getTodayDateRange()
@@ -493,8 +529,14 @@ const handleFilter = async () => {
     updateRecentBatchIds(filterForm.batchIds)
   }
   
+  // 如果有新的Lot号，添加到最近使用的列表中
+  if (filterForm.lotNumbers.length > 0) {
+    updateRecentLotNumbers(filterForm.lotNumbers)
+  }
+  
   const params = {
     batchIds: filterForm.batchIds,
+    lotNumbers: filterForm.lotNumbers,
     deviceIds: filterForm.deviceIds,
     operatorIds: filterForm.operatorIds,
     startDate: filterForm.dateRange[0],
@@ -508,8 +550,14 @@ const handleFilter = async () => {
   if (filterForm.batchIds.length > 0) {
     // 仍然需要调用fetchBatchData来保存筛选条件，但图表将直接使用批次ID
     await dataStore.fetchBatchData(params)
-  } else {
-    // 如果没有指定批次ID，则通过其他条件进行筛选
+  } 
+  // 如果是通过Lot号筛选
+  else if (filterForm.lotNumbers.length > 0) {
+    // 通过Lot号获取对应的批次数据
+    await dataStore.fetchBatchData(params)
+  }
+  else {
+    // 如果没有指定批次ID和Lot号，则通过其他条件进行筛选
     await dataStore.fetchBatchData(params)
   }
   

@@ -8,6 +8,7 @@ const API_BASE_URL = 'http://127.0.0.1:5000/api'
 // 筛选条件类型
 interface FilterType {
   batchIds?: string[]
+  lotNumbers?: string[]
   deviceIds: string[]
   operatorIds: string[]
   dateRange: string[]
@@ -112,6 +113,7 @@ export const useDataStore = defineStore('data', () => {
   // 获取批次数据
   const fetchBatchData = async (params: {
     batchIds?: string[]
+    lotNumbers?: string[]
     deviceIds?: string[]
     operatorIds?: string[]
     startDate?: string
@@ -126,6 +128,7 @@ export const useDataStore = defineStore('data', () => {
       // 保存当前筛选条件
       saveCurrentFilter({
         batchIds: params.batchIds,
+        lotNumbers: params.lotNumbers,
         deviceIds: params.deviceIds || [],
         operatorIds: params.operatorIds || [],
         dateRange: [params.startDate || '', params.endDate || ''],
@@ -148,7 +151,18 @@ export const useDataStore = defineStore('data', () => {
           searchParams.append('limit', params.limit.toString())
         }
       } 
-      // 只有在没有指定批次ID时，才应用其他筛选条件
+      // 添加Lot号数组 - 如果有Lot号，其他筛选条件忽略（批次ID除外）
+      else if (params.lotNumbers && params.lotNumbers.length > 0) {
+        params.lotNumbers.forEach(lotNumber => {
+          searchParams.append('lotNumbers', lotNumber)
+        })
+        
+        // 设置限制数量
+        if (params.limit) {
+          searchParams.append('limit', params.limit.toString())
+        }
+      }
+      // 只有在没有指定批次ID和Lot号时，才应用其他筛选条件
       else {
         // 处理设备ID数组
         if (params.deviceIds && params.deviceIds.length > 0) {
@@ -239,6 +253,7 @@ export const useDataStore = defineStore('data', () => {
     if (!dataLoaded.value) {
       await fetchBatchData({
         batchIds: currentFilter.value?.batchIds,
+        lotNumbers: currentFilter.value?.lotNumbers,
         deviceIds: currentFilter.value?.deviceIds || [],
         operatorIds: currentFilter.value?.operatorIds || [],
         startDate: currentFilter.value?.dateRange[0] || '',

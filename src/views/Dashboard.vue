@@ -22,6 +22,25 @@
             />
           </el-select>
         </el-form-item>
+        <el-form-item label="Lot号">
+          <el-select
+            v-model="filterForm.lotNumbers"
+            placeholder="输入或选择Lot号"
+            multiple
+            filterable
+            allow-create
+            default-first-option
+            clearable
+            style="width: 250px;"
+          >
+            <el-option
+              v-for="lotNumber in recentLotNumbers"
+              :key="lotNumber"
+              :label="lotNumber"
+              :value="lotNumber"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="设备号">
           <el-select 
             v-model="filterForm.deviceIds" 
@@ -117,6 +136,7 @@
         v-loading="tableLoading"
       >
         <el-table-column prop="batch_id" label="批次ID" width="120" sortable />
+        <el-table-column prop="lot" label="Lot号" width="120" sortable />
         <el-table-column prop="device_id" label="设备号" width="100" sortable />
         <el-table-column prop="operator_id" label="员工号" width="100" sortable />
         <el-table-column prop="start_time" label="开始时间" width="150" sortable>
@@ -190,10 +210,13 @@ const totalItems = ref(0)
 
 // 新增收集最近使用的批次ID
 const recentBatchIds = ref<string[]>([])
+// 新增收集最近使用的Lot号
+const recentLotNumbers = ref<string[]>([])
 
 // 筛选表单
 const filterForm = reactive({
   batchIds: [] as string[],
+  lotNumbers: [] as string[],
   deviceIds: [] as string[],
   operatorIds: [] as string[],
   dateRange: getTodayDateRange(),
@@ -208,10 +231,18 @@ const updateRecentBatchIds = (newBatchIds: string[]) => {
   recentBatchIds.value = allBatchIds.slice(0, 10)
 }
 
+// 更新最近使用的Lot号列表
+const updateRecentLotNumbers = (newLotNumbers: string[]) => {
+  // 合并新的Lot号和已有的，去重，并限制数量为10个
+  const allLotNumbers = [...new Set([...newLotNumbers, ...recentLotNumbers.value])]
+  recentLotNumbers.value = allLotNumbers.slice(0, 10)
+}
+
 // 使用存储中的筛选条件初始化表单
 const initializeFilterFromStore = () => {
   if (dataStore.currentFilter) {
     filterForm.batchIds = dataStore.currentFilter.batchIds || []
+    filterForm.lotNumbers = dataStore.currentFilter.lotNumbers || []
     filterForm.deviceIds = [...dataStore.currentFilter.deviceIds]
     filterForm.operatorIds = [...dataStore.currentFilter.operatorIds]
     filterForm.dateRange = [...dataStore.currentFilter.dateRange]
@@ -221,6 +252,11 @@ const initializeFilterFromStore = () => {
     // 如果有批次ID，添加到最近使用的列表中
     if (dataStore.currentFilter.batchIds && dataStore.currentFilter.batchIds.length > 0) {
       updateRecentBatchIds(dataStore.currentFilter.batchIds)
+    }
+    
+    // 如果有Lot号，添加到最近使用的列表中
+    if (dataStore.currentFilter.lotNumbers && dataStore.currentFilter.lotNumbers.length > 0) {
+      updateRecentLotNumbers(dataStore.currentFilter.lotNumbers)
     }
   }
 }
@@ -246,6 +282,11 @@ const fetchOlamData = async () => {
       updateRecentBatchIds(filterForm.batchIds)
     }
     
+    // 如果有新的Lot号，添加到最近使用的列表中
+    if (filterForm.lotNumbers.length > 0) {
+      updateRecentLotNumbers(filterForm.lotNumbers)
+    }
+    
     // 准备API参数
     const params: any = {
       page: currentPage.value,
@@ -260,8 +301,14 @@ const fetchOlamData = async () => {
       // 此处可能需要一个特殊标记，告诉后端API这是按批次ID直接查询
       params.searchByBatchId = true
     } 
+    // Lot号次之
+    else if (filterForm.lotNumbers && filterForm.lotNumbers.length > 0) {
+      // 如果指定了Lot号，则使用Lot号作为筛选条件
+      params.lotNumbers = filterForm.lotNumbers.join(',')
+    }
+    // 其他筛选条件最后
     else {
-      // 只有在没有指定批次ID时，才应用其他筛选条件
+      // 只有在没有指定批次ID和Lot号时，才应用其他筛选条件
       if (filterForm.deviceIds && filterForm.deviceIds.length > 0) {
         params.deviceIds = filterForm.deviceIds.join(',')
       }
@@ -281,6 +328,7 @@ const fetchOlamData = async () => {
     // 保存当前筛选条件到store
     dataStore.saveCurrentFilter({
       batchIds: filterForm.batchIds,
+      lotNumbers: filterForm.lotNumbers,
       deviceIds: filterForm.deviceIds,
       operatorIds: filterForm.operatorIds,
       dateRange: filterForm.dateRange,
@@ -320,6 +368,7 @@ onMounted(async () => {
 // 重置筛选条件
 const resetFilter = () => {
   filterForm.batchIds = []
+  filterForm.lotNumbers = []
   filterForm.deviceIds = []
   filterForm.operatorIds = []
   filterForm.dateRange = getTodayDateRange()
@@ -396,8 +445,16 @@ const exportToExcel = async () => {
       // 此处可能需要一个特殊标记，告诉后端API这是按批次ID直接查询
       searchParams.append('searchByBatchId', 'true')
     } 
+    // Lot号次之
+    else if (filterForm.lotNumbers && filterForm.lotNumbers.length > 0) {
+      // 如果指定了Lot号，则使用Lot号作为筛选条件
+      filterForm.lotNumbers.forEach(lotNumber => {
+        searchParams.append('lotNumbers', lotNumber)
+      })
+    }
+    // 其他筛选条件最后
     else {
-      // 只有在没有指定批次ID时，才应用其他筛选条件
+      // 只有在没有指定批次ID和Lot号时，才应用其他筛选条件
       if (filterForm.deviceIds && filterForm.deviceIds.length > 0) {
         filterForm.deviceIds.forEach(id => {
           searchParams.append('deviceIds', id)
@@ -457,7 +514,7 @@ const exportToExcel = async () => {
     })
     
     // 准备CSV表头
-    const baseHeaders = ['批次ID', '设备号', '员工号', '开始时间', '结束时间', '起始频率', '目标频率', '最终频率', '标准差', '耗时(秒)']
+    const baseHeaders = ['批次ID', 'Lot号', '设备号', '员工号', '开始时间', '结束时间', '起始频率', '目标频率', '最终频率', '标准差', '耗时(秒)']
     
     // 添加频率列
     const freHeaders = Array.from({ length: maxFreCount }, (_, i) => `频率${i+1}`)
@@ -473,6 +530,7 @@ const exportToExcel = async () => {
       // 基础数据
       const rowData = [
         item.batch_id,
+        item.lot || '-',
         item.device_id,
         item.operator_id,
         formatDateTime(item.start_time),
@@ -499,8 +557,12 @@ const exportToExcel = async () => {
     // 生成CSV内容
     let csvContent = rows.map(row => row.join(',')).join('\n')
     
+    // 添加UTF-8 BOM头，解决Excel打开中文乱码问题
+    const BOM = new Uint8Array([0xEF, 0xBB, 0xBF])
+    const csvContentWithBOM = new Blob([BOM, csvContent], { type: 'text/csv;charset=utf-8;' })
+    
     // 创建Blob对象
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const blob = csvContentWithBOM
     
     // 获取当前日期作为文件名
     const date = new Date()
