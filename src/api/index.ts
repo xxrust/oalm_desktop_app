@@ -30,6 +30,9 @@ export const getGridRecords = (params: {
 
 export const getGridOptions = () => api.get('/grid/options')
 
+export const getTimelineDay = (params: { date: string; deviceIds?: string[] }) =>
+  api.get('/timeline/day', { params })
+
 // 设备分析相关接口
 export const getDeviceAnalysis = (params: {
   deviceId?: string

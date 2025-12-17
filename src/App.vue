@@ -4,7 +4,8 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   DataLine,
   Grid,
-  Histogram
+  Histogram,
+  Timer
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -31,6 +32,10 @@ const handleSelect = (index: string) => {
         <el-menu-item index="/grid">
           <el-icon><Grid /></el-icon>
           <span>修盘数据</span>
+        </el-menu-item>
+        <el-menu-item index="/timeline">
+          <el-icon><Timer /></el-icon>
+          <span>设备日程</span>
         </el-menu-item>
         <!-- <el-menu-item index="/variance">
           <el-icon><TrendCharts /></el-icon>

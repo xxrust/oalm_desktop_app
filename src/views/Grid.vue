@@ -352,6 +352,7 @@ const renderRepairChart = () => {
 
   const series = buildSeries()
 
+  repairChart.clear()
   repairChart.setOption({
     tooltip: { trigger: 'axis' },
     legend: { data: series.map(s => s.name) },
@@ -359,7 +360,12 @@ const renderRepairChart = () => {
     xAxis: { type: 'category', data: x },
     yAxis: [{ type: 'value', name: 'stdev' }],
     series
-  })
+  }, { notMerge: true })
+}
+
+const clearAnalysis = () => {
+  repairChart?.clear()
+  ;(dataStore as any).repairEffectData = null
 }
 
 onMounted(() => {
@@ -381,6 +387,20 @@ watch(
   () => dataStore.repairEffectData,
   () => {
     renderRepairChart()
+  }
+)
+
+watch(
+  () => groupBy.value,
+  () => {
+    clearAnalysis()
+  }
+)
+
+watch(
+  () => selectedGrids.value.map(r => r.id).join(','),
+  () => {
+    clearAnalysis()
   }
 )
 

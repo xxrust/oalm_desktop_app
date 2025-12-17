@@ -23,6 +23,11 @@ const router = createRouter({
       component: () => import('../views/Grid.vue')
     },
     {
+      path: '/timeline',
+      name: 'timeline',
+      component: () => import('../views/Timeline.vue')
+    },
+    {
       path: '/device',
       name: 'device',
       component: () => import('../views/Device.vue')
