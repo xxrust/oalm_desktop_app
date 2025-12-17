@@ -37,6 +37,9 @@ export const useDataStore = defineStore('data', () => {
   // 分析数据
   const initialVarianceData = ref<any>(null)
   const repairEffectData = ref<any>(null)
+  const clearRepairEffectData = () => {
+    repairEffectData.value = null
+  }
   const frequencyRangeData = ref<any>(null)
   const operatorDeviceImpactData = ref<any>(null)
 
@@ -421,6 +424,7 @@ export const useDataStore = defineStore('data', () => {
     totalBatches,
     initialVarianceData,
     repairEffectData,
+    clearRepairEffectData,
     frequencyRangeData,
     operatorDeviceImpactData,
     batchRoundsData,

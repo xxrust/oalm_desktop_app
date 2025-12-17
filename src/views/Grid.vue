@@ -365,7 +365,7 @@ const renderRepairChart = () => {
 
 const clearAnalysis = () => {
   repairChart?.clear()
-  ;(dataStore as any).repairEffectData = null
+  dataStore.clearRepairEffectData()
 }
 
 onMounted(() => {
