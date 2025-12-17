@@ -120,6 +120,11 @@
           <div class="analysis-actions">
             <el-button size="small" @click="selectAllFiltered" :disabled="gridStore.records.length === 0">全选</el-button>
             <el-button size="small" @click="clearSelection" :disabled="selectedGrids.length === 0">清空</el-button>
+            <el-select v-model="groupBy" size="small" style="width: 160px">
+              <el-option label="全部合并" value="all" />
+              <el-option label="按设备合并" value="device" />
+              <el-option label="不合并(每次修盘一条线)" value="grid" />
+            </el-select>
           <el-button
             type="primary"
             size="small"
@@ -165,6 +170,7 @@ const filterForm = reactive({
 
 const selectedGrids = ref<GridRecord[]>([])
 const DEFAULT_MAX_BATCHES = 10
+const groupBy = ref<'all' | 'device' | 'grid'>('all')
 
 const canAnalyze = computed(() => selectedGrids.value.length > 0)
 
@@ -217,7 +223,8 @@ const analyzeRepairEffect = async () => {
 
   await dataStore.fetchRepairEffect({
     gridIds: selectedGrids.value.map(r => r.id),
-    maxBatches: DEFAULT_MAX_BATCHES
+    maxBatches: DEFAULT_MAX_BATCHES,
+    groupBy: groupBy.value
   } as any)
   await nextTick()
   renderRepairChart()
@@ -267,21 +274,75 @@ const renderRepairChart = () => {
   const payload: any = dataStore.repairEffectData
   const rows: any[] = payload?.batch_analysis || []
 
-  const x = rows.map(r => r.batch_number)
-  const avg = rows.map(r => r.avg_stdev)
-  const std = rows.map(r => r.std_stdev)
-  const count = rows.map(r => r.batch_count)
+  const x = Array.from({ length: DEFAULT_MAX_BATCHES }, (_, i) => i + 1)
+
+  const mode = payload?.groupBy || groupBy.value
+
+  const buildSeries = () => {
+    if (mode === 'grid') {
+      const byGrid = new Map<number, { deviceId?: string; points: Map<number, number | null> }>()
+      rows.forEach(r => {
+        const gridId = Number(r.grid_id)
+        const deviceId = r.device_id ? String(r.device_id) : undefined
+        const batchNumber = Number(r.batch_number)
+        const stdev = r.stdev === null || r.stdev === undefined ? null : Number(r.stdev)
+        if (!byGrid.has(gridId)) byGrid.set(gridId, { deviceId, points: new Map() })
+        byGrid.get(gridId)!.points.set(batchNumber, stdev)
+      })
+
+      return Array.from(byGrid.entries()).map(([gridId, v]) => ({
+        name: v.deviceId ? `${v.deviceId}#${gridId}` : String(gridId),
+        type: 'line',
+        smooth: true,
+        data: x.map(n => (v.points.has(n) ? v.points.get(n) : null))
+      }))
+    }
+
+    if (mode === 'device') {
+      const byDevice = new Map<string, Map<number, number | null>>()
+      rows.forEach(r => {
+        const deviceId = String(r.device_id)
+        const batchNumber = Number(r.batch_number)
+        const avgStdev = r.avg_stdev === null || r.avg_stdev === undefined ? null : Number(r.avg_stdev)
+        if (!byDevice.has(deviceId)) byDevice.set(deviceId, new Map())
+        byDevice.get(deviceId)!.set(batchNumber, avgStdev)
+      })
+
+      return Array.from(byDevice.entries()).map(([deviceId, points]) => ({
+        name: deviceId,
+        type: 'line',
+        smooth: true,
+        data: x.map(n => (points.has(n) ? points.get(n) : null))
+      }))
+    }
+
+    // all
+    const points = new Map<number, number | null>()
+    rows.forEach(r => {
+      const batchNumber = Number(r.batch_number)
+      const avgStdev = r.avg_stdev === null || r.avg_stdev === undefined ? null : Number(r.avg_stdev)
+      points.set(batchNumber, avgStdev)
+    })
+
+    return [
+      {
+        name: 'stdev',
+        type: 'line',
+        smooth: true,
+        data: x.map(n => (points.has(n) ? points.get(n) : null))
+      }
+    ]
+  }
+
+  const series = buildSeries()
 
   repairChart.setOption({
     tooltip: { trigger: 'axis' },
-    legend: { data: ['平均stdev', 'stdev波动'] },
+    legend: { data: series.map(s => s.name) },
     grid: { left: 40, right: 20, top: 40, bottom: 40 },
     xAxis: { type: 'category', data: x },
     yAxis: [{ type: 'value', name: 'stdev' }],
-    series: [
-      { name: '平均stdev', type: 'line', data: avg, smooth: true },
-      { name: 'stdev波动', type: 'line', data: std, smooth: true }
-    ]
+    series
   })
 }
 

@@ -289,7 +289,16 @@ export const useDataStore = defineStore('data', () => {
 
   // 分析修盘效果
   const fetchRepairEffect = async (
-    arg1: string | { deviceId?: string; repairMethod?: string; gridId?: number; maxBatches?: number },
+    arg1:
+      | string
+      | {
+          deviceId?: string
+          repairMethod?: string
+          gridId?: number
+          gridIds?: number[]
+          maxBatches?: number
+          groupBy?: 'all' | 'device' | 'grid'
+        },
     repairMethod?: string,
     maxBatches: number = 10
   ) => {
@@ -311,6 +320,7 @@ export const useDataStore = defineStore('data', () => {
         if ((params as any).gridId !== undefined) searchParams.append('gridId', String((params as any).gridId))
         if ((params as any).deviceId) searchParams.append('deviceId', String((params as any).deviceId))
         if ((params as any).repairMethod) searchParams.append('repairMethod', String((params as any).repairMethod))
+        if ((params as any).groupBy) searchParams.append('groupBy', String((params as any).groupBy))
         searchParams.append('maxBatches', String((params as any).maxBatches ?? maxBatches))
         requestParams = searchParams
       }
