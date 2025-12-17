@@ -191,9 +191,25 @@ const analysisMetaText = computed(() => {
   if (!meta && !debug) return ''
 
   const parts: string[] = []
+  if (data?.groupBy) parts.push(`模式: ${String(data.groupBy)}`)
+
   if (meta?.grid_time) parts.push(`修盘结束: ${formatDateTime(meta.grid_time)}`)
   if (meta?.next_grid_time) parts.push(`下一次修盘: ${formatDateTime(meta.next_grid_time)}`)
   if (debug?.candidate_batches !== undefined) parts.push(`匹配批次(<=10): ${debug.candidate_batches}`)
+  if (debug?.selected_grids !== undefined) parts.push(`选中修盘: ${debug.selected_grids}`)
+  if (debug?.grids_with_candidates !== undefined) parts.push(`有批次修盘: ${debug.grids_with_candidates}`)
+
+  // quick series count hint for multi-line modes
+  const rows: any[] = data?.batch_analysis || []
+  if (data?.groupBy === 'grid') {
+    const unique = new Set(rows.map(r => r.grid_id))
+    parts.push(`线条: ${unique.size}`)
+  } else if (data?.groupBy === 'device') {
+    const unique = new Set(rows.map(r => r.device_id))
+    parts.push(`线条: ${unique.size}`)
+  } else if (data?.groupBy === 'all') {
+    parts.push('线条: 1')
+  }
   return parts.join(' | ')
 })
 

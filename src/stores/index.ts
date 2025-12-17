@@ -325,9 +325,9 @@ export const useDataStore = defineStore('data', () => {
         requestParams = searchParams
       }
 
-      const response = await axios.get(`${API_BASE_URL}/analysis/repair-effect`, {
-        params: requestParams
-      })
+      const response = Array.isArray(gridIds)
+        ? await axios.get(`${API_BASE_URL}/analysis/repair-effect?${(requestParams as URLSearchParams).toString()}`)
+        : await axios.get(`${API_BASE_URL}/analysis/repair-effect`, { params: requestParams })
       repairEffectData.value = response.data
     } catch (err: any) {
       error.value = err.message || '分析修盘效果失败'
