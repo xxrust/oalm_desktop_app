@@ -2,6 +2,16 @@
   <div class="grid-container">
     <el-card class="filter-card">
       <el-form :inline="true" :model="filterForm">
+        <el-form-item label="修盘ID">
+          <el-input-number
+            v-model="filterForm.gridId"
+            :min="1"
+            :controls="false"
+            placeholder="输入修盘ID定位"
+            style="width: 200px"
+          />
+        </el-form-item>
+
         <el-form-item label="设备ID">
           <el-select
             v-model="filterForm.deviceId"
@@ -44,6 +54,7 @@
             start-placeholder="开始日期"
             end-placeholder="结束日期"
             value-format="YYYY-MM-DD"
+            clearable
           />
         </el-form-item>
 
@@ -138,9 +149,10 @@ let repairChart: echarts.ECharts | null = null
 const resizeHandler = () => repairChart?.resize()
 
 const filterForm = reactive({
+  gridId: null as number | null,
   deviceId: '' as string,
   gridMod: null as number | null,
-  dateRange: getTodayDateRange() as string[],
+  dateRange: [] as string[],
   limit: 200
 })
 
@@ -172,18 +184,10 @@ const analysisMetaText = computed(() => {
   return parts.join(' | ')
 })
 
-function getTodayDateRange() {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-  const dateStr = `${year}-${month}-${day}`
-  return [dateStr, dateStr]
-}
-
 const fetchGrid = async () => {
   const [startDate, endDate] = filterForm.dateRange || []
   await gridStore.fetchGridRecords({
+    gridId: filterForm.gridId ?? undefined,
     deviceId: filterForm.deviceId || undefined,
     gridMod: filterForm.gridMod ?? undefined,
     startDate: startDate || undefined,
@@ -193,9 +197,10 @@ const fetchGrid = async () => {
 }
 
 const resetFilter = async () => {
+  filterForm.gridId = null
   filterForm.deviceId = ''
   filterForm.gridMod = null
-  filterForm.dateRange = getTodayDateRange()
+  filterForm.dateRange = []
   filterForm.limit = 200
   await fetchGrid()
 }

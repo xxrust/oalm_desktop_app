@@ -26,6 +26,7 @@ export const useGridStore = defineStore('grid', () => {
   const options = ref<GridOptions>({ gridMods: [], endWays: [] })
 
   const fetchGridRecords = async (params: {
+    gridId?: number
     startDate?: string
     endDate?: string
     deviceId?: string

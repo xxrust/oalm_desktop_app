@@ -19,6 +19,7 @@ export const getVarianceAnalysis = (params: {
 
 // 网格分析相关接口
 export const getGridRecords = (params: {
+  gridId?: number
   deviceId?: string
   gridMod?: number | string
   startDate?: string
