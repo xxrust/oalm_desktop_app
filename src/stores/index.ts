@@ -288,12 +288,12 @@ export const useDataStore = defineStore('data', () => {
   }
 
   // 分析修盘效果
-  const fetchRepairEffect = async (deviceId: string, repairMethod: string) => {
+  const fetchRepairEffect = async (deviceId: string, repairMethod: string, maxBatches: number = 30) => {
     try {
       loading.value = true
       error.value = null
       const response = await axios.get(`${API_BASE_URL}/analysis/repair-effect`, {
-        params: { deviceId, repairMethod }
+        params: { deviceId, repairMethod, maxBatches }
       })
       repairEffectData.value = response.data
     } catch (err: any) {

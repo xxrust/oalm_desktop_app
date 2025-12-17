@@ -101,7 +101,16 @@
     <el-card class="analysis-card">
       <template #header>
         <div class="card-header">
-          <span>修盘后 24h 内批次质量变化</span>
+          <span>修盘后质量变化（按盘数）</span>
+          <div class="analysis-actions">
+            <span class="analysis-label">盘数</span>
+            <el-input-number
+              v-model="analysisForm.maxBatches"
+              :min="1"
+              :max="200"
+              size="small"
+              style="width: 140px"
+            />
           <el-button
             type="primary"
             size="small"
@@ -111,12 +120,13 @@
           >
             分析
           </el-button>
+          </div>
         </div>
       </template>
       <div class="chart-container">
         <div ref="repairChartEl" class="chart"></div>
       </div>
-      <div v-if="analysisEmpty" class="empty-hint">暂无分析数据（请选择设备与修盘方式，或该条件下 24h 内无批次）。</div>
+      <div v-if="analysisEmpty" class="empty-hint">暂无分析数据（请选择设备与修盘方式，或修盘后无批次/已被下一次修盘截断）。</div>
     </el-card>
   </div>
 </template>
@@ -138,6 +148,10 @@ const filterForm = reactive({
   gridMod: null as number | null,
   dateRange: getTodayDateRange() as string[],
   limit: 200
+})
+
+const analysisForm = reactive({
+  maxBatches: 30
 })
 
 const canAnalyze = computed(() => Boolean(filterForm.deviceId) && filterForm.gridMod !== null)
@@ -178,7 +192,7 @@ const resetFilter = async () => {
 
 const analyzeRepairEffect = async () => {
   if (!canAnalyze.value) return
-  await dataStore.fetchRepairEffect(filterForm.deviceId, String(filterForm.gridMod))
+  await dataStore.fetchRepairEffect(filterForm.deviceId, String(filterForm.gridMod), analysisForm.maxBatches)
   await nextTick()
   renderRepairChart()
 }
@@ -275,6 +289,15 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+.analysis-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.analysis-label {
+  color: #606266;
+  font-size: 12px;
 }
 .count {
   color: #606266;
