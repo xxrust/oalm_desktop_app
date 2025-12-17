@@ -75,6 +75,7 @@
         max-height="520"
         v-loading="gridStore.loading"
         @current-change="handleCurrentChange"
+        @row-click="handleRowClick"
       >
         <el-table-column prop="id" label="ID" width="90" sortable />
         <el-table-column prop="device_id" label="设备" width="110" sortable />
@@ -118,7 +119,7 @@
       <div class="chart-container">
         <div ref="repairChartEl" class="chart"></div>
       </div>
-      <div v-if="analysisEmpty" class="empty-hint">请选择一条修盘记录后点击“分析”。</div>
+      <div v-if="analysisHint" class="empty-hint">{{ analysisHint }}</div>
     </el-card>
   </div>
 </template>
@@ -147,10 +148,13 @@ const DEFAULT_MAX_BATCHES = 10
 
 const canAnalyze = computed(() => selectedGrid.value !== null)
 
-const analysisEmpty = computed(() => {
+const analysisHint = computed(() => {
+  if (!selectedGrid.value) return '请选择一条修盘记录后点击“分析”。'
   const data = dataStore.repairEffectData as any
   const rows = data?.batch_analysis
-  return !rows || rows.length === 0
+  if (!rows) return ''
+  if (Array.isArray(rows) && rows.length === 0) return '该修盘记录后未匹配到批次数据（可能修盘后无研磨/或很快进行了下一次修盘）。'
+  return ''
 })
 
 function getTodayDateRange() {
@@ -195,6 +199,10 @@ const analyzeRepairEffect = async () => {
 
 const handleCurrentChange = (currentRow: GridRecord | null) => {
   selectedGrid.value = currentRow
+}
+
+const handleRowClick = (row: GridRecord) => {
+  selectedGrid.value = row
 }
 
 const formatDateTime = (value: string | null) => {
