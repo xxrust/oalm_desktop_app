@@ -78,16 +78,17 @@
       </template>
 
       <el-table
+        ref="gridTableRef"
         :data="gridStore.records"
         style="width: 100%"
         border
         stripe
-        highlight-current-row
         max-height="520"
         v-loading="gridStore.loading"
-        @current-change="handleCurrentChange"
+        @selection-change="handleSelectionChange"
         @row-click="handleRowClick"
       >
+        <el-table-column type="selection" width="50" />
         <el-table-column prop="id" label="ID" width="90" sortable />
         <el-table-column prop="device_id" label="设备" width="110" sortable />
         <el-table-column prop="grid_mod" label="grid_mod" width="100" sortable />
@@ -116,6 +117,9 @@
       <template #header>
         <div class="card-header">
           <span>修盘后质量变化（按盘数）</span>
+          <div class="analysis-actions">
+            <el-button size="small" @click="selectAllFiltered" :disabled="gridStore.records.length === 0">全选</el-button>
+            <el-button size="small" @click="clearSelection" :disabled="selectedGrids.length === 0">清空</el-button>
           <el-button
             type="primary"
             size="small"
@@ -125,6 +129,7 @@
           >
             分析
           </el-button>
+          </div>
         </div>
       </template>
       <div class="chart-container">
@@ -141,9 +146,11 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } 
 import * as echarts from 'echarts'
 import { useGridStore, type GridRecord } from '../stores/grid'
 import { useDataStore } from '../stores'
+import type { ElTable } from 'element-plus'
 
 const gridStore = useGridStore()
 const dataStore = useDataStore()
+const gridTableRef = ref<InstanceType<typeof ElTable> | null>(null)
 const repairChartEl = ref<HTMLElement | null>(null)
 let repairChart: echarts.ECharts | null = null
 const resizeHandler = () => repairChart?.resize()
@@ -156,13 +163,13 @@ const filterForm = reactive({
   limit: 200
 })
 
-const selectedGrid = ref<GridRecord | null>(null)
+const selectedGrids = ref<GridRecord[]>([])
 const DEFAULT_MAX_BATCHES = 10
 
-const canAnalyze = computed(() => selectedGrid.value !== null)
+const canAnalyze = computed(() => selectedGrids.value.length > 0)
 
 const analysisHint = computed(() => {
-  if (!selectedGrid.value) return '请选择一条修盘记录后点击“分析”。'
+  if (selectedGrids.value.length === 0) return '请选择一个或多个修盘记录后点击“分析”。'
   const data = dataStore.repairEffectData as any
   const rows = data?.batch_analysis
   if (dataStore.error) return String(dataStore.error)
@@ -206,23 +213,30 @@ const resetFilter = async () => {
 }
 
 const analyzeRepairEffect = async () => {
-  const grid = selectedGrid.value
-  if (!grid) return
+  if (selectedGrids.value.length === 0) return
 
   await dataStore.fetchRepairEffect({
-    gridId: grid.id,
+    gridIds: selectedGrids.value.map(r => r.id),
     maxBatches: DEFAULT_MAX_BATCHES
-  })
+  } as any)
   await nextTick()
   renderRepairChart()
 }
 
-const handleCurrentChange = (currentRow: GridRecord | null) => {
-  selectedGrid.value = currentRow
+const handleSelectionChange = (rows: GridRecord[]) => {
+  selectedGrids.value = rows
 }
 
 const handleRowClick = (row: GridRecord) => {
-  selectedGrid.value = row
+  gridTableRef.value?.toggleRowSelection(row)
+}
+
+const selectAllFiltered = () => {
+  gridTableRef.value?.toggleAllSelection()
+}
+
+const clearSelection = () => {
+  gridTableRef.value?.clearSelection()
 }
 
 const formatDateTime = (value: string | null) => {
@@ -334,5 +348,10 @@ onBeforeUnmount(() => {
   margin-top: 6px;
   color: #606266;
   font-size: 12px;
+}
+.analysis-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 </style> 

@@ -300,10 +300,23 @@ export const useDataStore = defineStore('data', () => {
       const params =
         typeof arg1 === 'string'
           ? { deviceId: arg1, repairMethod, maxBatches }
-          : { ...arg1, maxBatches: arg1.maxBatches ?? maxBatches }
+          : { ...arg1, maxBatches: (arg1 as any).maxBatches ?? maxBatches }
+
+      // Support gridIds[]=1&gridIds[]=2 style.
+      let requestParams: any = params
+      const gridIds = (params as any).gridIds as number[] | undefined
+      if (Array.isArray(gridIds)) {
+        const searchParams = new URLSearchParams()
+        gridIds.forEach(id => searchParams.append('gridIds', String(id)))
+        if ((params as any).gridId !== undefined) searchParams.append('gridId', String((params as any).gridId))
+        if ((params as any).deviceId) searchParams.append('deviceId', String((params as any).deviceId))
+        if ((params as any).repairMethod) searchParams.append('repairMethod', String((params as any).repairMethod))
+        searchParams.append('maxBatches', String((params as any).maxBatches ?? maxBatches))
+        requestParams = searchParams
+      }
 
       const response = await axios.get(`${API_BASE_URL}/analysis/repair-effect`, {
-        params
+        params: requestParams
       })
       repairEffectData.value = response.data
     } catch (err: any) {
