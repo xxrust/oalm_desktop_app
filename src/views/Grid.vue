@@ -260,17 +260,13 @@ const renderRepairChart = () => {
 
   repairChart.setOption({
     tooltip: { trigger: 'axis' },
-    legend: { data: ['平均stdev', 'stdev波动', '批次数'] },
-    grid: { left: 40, right: 30, top: 40, bottom: 40 },
+    legend: { data: ['平均stdev', 'stdev波动'] },
+    grid: { left: 40, right: 20, top: 40, bottom: 40 },
     xAxis: { type: 'category', data: x },
-    yAxis: [
-      { type: 'value', name: 'stdev' },
-      { type: 'value', name: '批次数' }
-    ],
+    yAxis: [{ type: 'value', name: 'stdev' }],
     series: [
       { name: '平均stdev', type: 'line', data: avg, smooth: true },
-      { name: 'stdev波动', type: 'line', data: std, smooth: true },
-      { name: '批次数', type: 'bar', yAxisIndex: 1, data: count, barMaxWidth: 26, opacity: 0.7 }
+      { name: 'stdev波动', type: 'line', data: std, smooth: true }
     ]
   })
 }
