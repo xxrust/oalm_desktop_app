@@ -11,6 +11,18 @@ node_modules
 dist
 dist-ssr
 *.local
+*.tsbuildinfo
+
+# Local env/config
+.env
+.env.*
+
+# Desktop packaged server binaries
+app_server/
+
+# Tauri build outputs
+src-tauri/target/
+src-tauri/gen/
 
 # Editor directories and files
 .vscode/*

@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: 'http://127.0.0.1:5000/api',
   timeout: 10000
 })
 
@@ -18,14 +18,16 @@ export const getVarianceAnalysis = (params: {
 }) => api.get('/variance', { params })
 
 // 网格分析相关接口
-export const getGridAnalysis = (params: {
-  gridId?: string
-  date?: string
+export const getGridRecords = (params: {
+  deviceId?: string
+  gridMod?: number | string
   startDate?: string
   endDate?: string
-  deviceId?: string
-  operatorId?: string
+  limit?: number
+  offset?: number
 }) => api.get('/grid', { params })
+
+export const getGridOptions = () => api.get('/grid/options')
 
 // 设备分析相关接口
 export const getDeviceAnalysis = (params: {

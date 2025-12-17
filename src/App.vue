@@ -1,17 +1,15 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   DataLine,
-  TrendCharts,
   Grid,
-  Monitor,
-  User,
   Histogram
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
-const activeMenu = ref('/dashboard')
+const route = useRoute()
+const activeMenu = computed(() => route.path)
 
 const handleSelect = (index: string) => {
   router.push(index)
@@ -30,13 +28,13 @@ const handleSelect = (index: string) => {
           <el-icon><DataLine /></el-icon>
           <span>数据概览</span>
         </el-menu-item>
+        <el-menu-item index="/grid">
+          <el-icon><Grid /></el-icon>
+          <span>修盘数据</span>
+        </el-menu-item>
         <!-- <el-menu-item index="/variance">
           <el-icon><TrendCharts /></el-icon>
           <span>偏差分析</span>
-        </el-menu-item>
-        <el-menu-item index="/grid">
-          <el-icon><Grid /></el-icon>
-          <span>网格分析</span>
         </el-menu-item>
         <el-menu-item index="/device">
           <el-icon><Monitor /></el-icon>
