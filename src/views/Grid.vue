@@ -120,6 +120,7 @@
         <div ref="repairChartEl" class="chart"></div>
       </div>
       <div v-if="analysisHint" class="empty-hint">{{ analysisHint }}</div>
+      <div v-if="analysisMetaText" class="meta-hint">{{ analysisMetaText }}</div>
     </el-card>
   </div>
 </template>
@@ -152,9 +153,23 @@ const analysisHint = computed(() => {
   if (!selectedGrid.value) return '请选择一条修盘记录后点击“分析”。'
   const data = dataStore.repairEffectData as any
   const rows = data?.batch_analysis
+  if (dataStore.error) return String(dataStore.error)
   if (!rows) return ''
   if (Array.isArray(rows) && rows.length === 0) return '该修盘记录后未匹配到批次数据（可能修盘后无研磨/或很快进行了下一次修盘）。'
   return ''
+})
+
+const analysisMetaText = computed(() => {
+  const data = dataStore.repairEffectData as any
+  const meta = data?.meta
+  const debug = data?.debug
+  if (!meta && !debug) return ''
+
+  const parts: string[] = []
+  if (meta?.grid_time) parts.push(`修盘结束: ${formatDateTime(meta.grid_time)}`)
+  if (meta?.next_grid_time) parts.push(`下一次修盘: ${formatDateTime(meta.next_grid_time)}`)
+  if (debug?.candidate_batches !== undefined) parts.push(`匹配批次(<=10): ${debug.candidate_batches}`)
+  return parts.join(' | ')
 })
 
 function getTodayDateRange() {
@@ -312,6 +327,11 @@ onBeforeUnmount(() => {
 .empty-hint {
   margin-top: 8px;
   color: #909399;
+  font-size: 12px;
+}
+.meta-hint {
+  margin-top: 6px;
+  color: #606266;
   font-size: 12px;
 }
 </style> 
