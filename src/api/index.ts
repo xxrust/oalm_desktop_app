@@ -46,3 +46,13 @@ export const getOperatorAnalysis = (params: {
   startDate?: string
   endDate?: string
 }) => api.get('/operator', { params }) 
+
+export const aiChat = (payload: {
+  providerId: string
+  baseUrl?: string
+  model: string
+  apiKey: string
+  message: string
+  history?: Array<{ role: 'user' | 'assistant'; content: string }>
+  maxRows?: number
+}) => api.post('/ai/chat', payload, { timeout: 120000 })

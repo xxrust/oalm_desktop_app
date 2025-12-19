@@ -1,16 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import {
-  DataLine,
-  Grid,
-  Histogram,
-  Timer
-} from '@element-plus/icons-vue'
+import { ChatDotRound, DataLine, Grid, Histogram, Timer } from '@element-plus/icons-vue'
+import AiChatDrawer from './components/AiChatDrawer.vue'
 
 const router = useRouter()
 const route = useRoute()
 const activeMenu = computed(() => route.path)
+const aiOpen = ref(false)
 
 const handleSelect = (index: string) => {
   router.push(index)
@@ -20,11 +17,7 @@ const handleSelect = (index: string) => {
 <template>
   <el-container class="app-container">
     <el-aside width="200px">
-      <el-menu
-        :default-active="activeMenu"
-        class="el-menu-vertical"
-        @select="handleSelect"
-      >
+      <el-menu :default-active="activeMenu" class="el-menu-vertical" @select="handleSelect">
         <el-menu-item index="/dashboard">
           <el-icon><DataLine /></el-icon>
           <span>数据概览</span>
@@ -37,7 +30,8 @@ const handleSelect = (index: string) => {
           <el-icon><Timer /></el-icon>
           <span>设备日程</span>
         </el-menu-item>
-        <!-- <el-menu-item index="/variance">
+        <!--
+        <el-menu-item index="/variance">
           <el-icon><TrendCharts /></el-icon>
           <span>偏差分析</span>
         </el-menu-item>
@@ -48,7 +42,8 @@ const handleSelect = (index: string) => {
         <el-menu-item index="/operator">
           <el-icon><User /></el-icon>
           <span>操作员分析</span>
-        </el-menu-item> -->
+        </el-menu-item>
+        -->
         <el-menu-item index="/batch">
           <el-icon><Histogram /></el-icon>
           <span>批次分析</span>
@@ -57,13 +52,23 @@ const handleSelect = (index: string) => {
     </el-aside>
     <el-container>
       <el-header>
-        <h1>OLAM数据分析系统</h1>
+        <div class="header-bar">
+          <h1>OLAM数据分析系统</h1>
+          <div class="header-actions">
+            <el-button type="primary" plain @click="aiOpen = true">
+              <el-icon><ChatDotRound /></el-icon>
+              AI助手
+            </el-button>
+          </div>
+        </div>
       </el-header>
       <el-main>
         <router-view></router-view>
       </el-main>
     </el-container>
   </el-container>
+
+  <AiChatDrawer v-model="aiOpen" />
 </template>
 
 <style scoped>
@@ -82,14 +87,27 @@ const handleSelect = (index: string) => {
 .el-header {
   background-color: #fff;
   border-bottom: 1px solid #e6e6e6;
+  padding: 0 16px;
+}
+
+.header-bar {
+  height: 100%;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .el-header h1 {
   margin: 0;
   font-size: 20px;
   color: #333;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .el-main {
